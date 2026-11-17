@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beauty Plus · MRP Planner</title>
+<style>
+  :root { --red:#ea3323; --red2:#c42417; --redl:#fde6e3; --ink:#111; --ink2:#2b2f36; --muted:#6b6f76; --line:#dcdcdc; --bg:#f6f6f6; --w1:#f1f1f1; --chg:#ffe27a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); font-size:14px; }
+  header { background:#fff; border-bottom:1px solid #bdbdbd; padding:14px 24px; display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:18px; }
+  .brand img { height:34px; }
+  .brand .sep { width:1px; height:40px; background:var(--line); }
+  h1 { margin:0; font-size:26px; font-weight:800; letter-spacing:-.5px; line-height:1.1; }
+  h1 .hl { background:var(--red); color:#fff; padding:0 6px; }
+  .names { font-size:13px; font-weight:600; color:var(--ink2); margin-top:4px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:13px; }
+  .toolbar label { display:flex; align-items:center; gap:6px; font-weight:600; color:var(--ink2); }
+  button { cursor:pointer; font-family:inherit; border-radius:8px; padding:8px 14px; font-size:12.5px; font-weight:600; letter-spacing:.3px; text-transform:uppercase; border:1.5px solid var(--red); background:#fff; color:var(--red); }
+  button:hover { background:var(--redl); }
+  button.primary { background:var(--red); color:#fff; }
+  button.primary:hover { background:var(--red2); }
+  button.x { text-transform:none; padding:2px 8px; border-color:var(--line); color:var(--muted); }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 390px; gap:18px; max-width:1680px; margin:0 auto; padding:18px 24px 40px; align-items:start; }
+  @media (max-width:1100px) { .layout { grid-template-columns:1fr; } aside { position:static !important; max-height:none !important; } }
+  section, .panel { background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+  h2 { font-size:17px; margin:0 0 10px; font-weight:800; letter-spacing:-.2px; }
+  h2 .n { color:var(--red); margin-right:6px; }
+  h3 { font-size:13.5px; margin:14px 0 6px; font-weight:700; }
+  .hint { color:var(--muted); font-size:12px; margin:4px 0 0; }
+  aside { position:sticky; top:12px; max-height:calc(100vh - 24px); overflow:auto; }
+  aside .panel { border-top:4px solid var(--red); }
+  aside h2 { font-size:16px; }
+  .alerts div { padding:7px 10px; border-radius:7px; margin-bottom:8px; font-size:12.5px; line-height:1.4; }
+  .alerts .late { max-height:170px; overflow:auto; }
+  .alerts .late { background:var(--redl); color:var(--red2); border:1px solid #f5b5ae; }
+  .alerts .info { background:#fff6dd; color:#7a5300; border:1px solid #f0d58f; }
+  .alerts .ok { background:#eef6ef; color:#24603a; border:1px solid #c6e2cd; }
+  .grp { font-size:11.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; margin:12px 0 5px; display:flex; justify-content:space-between; color:var(--ink2); }
+  .grp .count { color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th, td { border:1px solid var(--line); padding:4px 7px; text-align:right; white-space:nowrap; }
+  th { background:#f3f3f3; font-weight:700; }
+  td.l, th.l { text-align:left; }
+  .side td .d { display:block; font-size:11px; color:var(--muted); }
+  .side td { vertical-align:middle; }
+  .empty { color:var(--muted); font-style:italic; font-size:12.5px; padding:2px 0; }
+  .tag { display:inline-block; font-size:10.5px; font-weight:800; padding:1px 6px; border-radius:4px; letter-spacing:.3px; }
+  .tag.buy { background:#222; color:#fff; } .tag.make { background:var(--red); color:#fff; } .tag.late { background:#fff; color:var(--red2); border:1.5px solid var(--red2); }
+  .scroll { overflow-x:auto; }
+  #schedTable th, #schedTable td { padding:4px 5px; font-size:12.5px; }
+  .w1 { background:var(--w1) !important; }
+  th.w1 { border-bottom:3px solid var(--red); }
+  td.zero { color:#bdbdbd; }
+  td.por { font-weight:700; }
+  td.por.has { background:var(--redl); color:var(--red2); }
+  td.past.has { background:var(--red) !important; color:#fff; }
+  tr.band td { font-weight:800; font-size:11.5px; letter-spacing:.5px; text-transform:uppercase; background:#fafafa; }
+  @keyframes flash { 0% { background:var(--chg); } 100% { } }
+  .chg { animation:flash 2.2s ease-out; outline:2px solid #e7b400; outline-offset:-2px; }
+  input[type=number], input[type=text], select { font-family:inherit; font-size:13px; border:1px solid #c8c8c8; border-radius:6px; padding:3px 6px; background:#fff; }
+  input:focus, select:focus { outline:2px solid var(--red); outline-offset:0; border-color:var(--red); }
+  input[type=number] { width:74px; text-align:right; }
+  input.bad { border-color:var(--red2); background:var(--redl); }
+  .assump td { text-align:center; } .assump td.l { text-align:left; }
+  .grid2 { display:grid; grid-template-columns:1.1fr 1fr; gap:14px; }
+  @media (max-width:1300px) { .grid2 { grid-template-columns:1fr; } }
+  details.item { border:1px solid var(--line); border-radius:8px; margin-bottom:10px; background:#fff; }
+  details.item > summary { cursor:pointer; padding:8px 12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; list-style:none; }
+  details > summary::-webkit-details-marker { display:none; }
+  details.item > summary::before, details.fx > summary::before { content:"▸"; color:var(--red); font-weight:800; }
+  details.item[open] > summary::before, details.fx[open] > summary::before { content:"▾"; }
+  details.item .body { padding:0 12px 12px; }
+  .meta { color:var(--muted); font-size:12px; }
+  .lvl { font-size:11px; color:#fff; background:#555; border-radius:4px; padding:1px 6px; font-weight:700; }
+  table.mrpt { table-layout:fixed; min-width:880px; }
+  table.mrpt th:first-child, table.mrpt td:first-child { width:200px; }
+  .tree { font-family:ui-monospace, Menlo, Consolas, monospace; font-size:12px; line-height:1.55; background:#fafafa; border:1px solid var(--line); border-radius:8px; padding:8px 12px; white-space:pre; overflow-x:auto; margin:0; }
+  details.fx > summary { cursor:pointer; list-style:none; display:flex; gap:8px; align-items:center; }
+  details.fx > summary h2 { margin:0; }
+  .formula { margin-top:10px; border-left:3px solid var(--red); padding:6px 12px; font-size:13px; line-height:1.6; }
+  .formula p { margin:0 0 6px; }
+  details.weeks { font-size:12.5px; }
+  details.weeks > summary { cursor:pointer; color:var(--red); font-weight:700; list-style:none; display:inline; }
+  details.weeks[open] > summary { margin-right:8px; }
+  details.weeks button { margin-left:4px; }
+  th.addwk { background:#fff; vertical-align:middle; padding:3px 5px; }
+  th.addwk button { display:block; width:100%; margin:2px 0; font-size:11.5px; color:var(--red); border-color:var(--red); font-weight:700; }
+  footer { text-align:center; color:var(--muted); font-size:12px; padding-bottom:20px; }
+  @media print { aside { position:static; max-height:none; } .noprint { display:none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="data:image/png;base64,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" alt="IESE">
+    <div class="sep"></div>
+    <div>
+      <h1>Beauty Plus <span class="hl">MRP</span>.</h1>
+      <div class="names">Delphine Weiss &amp; Luíza Cavalcanti · Operations I, Homework 1</div>
+    </div>
+  </div>
+  <div class="toolbar noprint">
+    <label>Horizon <input id="horizon" type="number" min="1" max="52" step="1" style="width:56px"> wks</label>
+    <label>Scrap
+      <select id="scrapMethod">
+        <option value="multiply">× (1 + scrap%)</option>
+        <option value="divide">÷ (1 − scrap%)</option>
+      </select>
+    </label>
+    <button id="btnExpand">Collapse tables</button>
+    <button id="btnCsv">Export CSV</button>
+    <button id="btnReset" class="primary">Reset to case</button>
+  </div>
+</header>
+
+<div class="layout">
+  <main>
+    <section id="schedule">
+      <h2><span class="n">1</span>Planned order releases</h2>
+      <div class="scroll"><table id="schedTable"></table></div>
+    </section>
+
+    <section id="assumptions">
+      <h2><span class="n">2</span>Inputs</h2>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:14px 0 6px">
+        <h3 style="margin:0">Demand for N3000 (boxes of 10 kits)</h3>
+        <details class="weeks noprint"><summary>Plan more weeks ▸</summary>
+          <span class="meta" id="hzLabel"></span>
+          <button class="x" data-hz="-1">− 1 week</button><button class="x" data-hz="1">+ 1 week</button><button class="x" data-hz="4">+ 4 weeks</button><button class="x" data-hz="reset">Back to 15</button>
+        </details>
+      </div>
+      <div class="scroll"><table id="demandTable" class="assump"></table></div>
+
+      <h3>Items</h3>
+      <div class="scroll"><table id="itemTable" class="assump"></table></div>
+      <p class="hint">Multiple of batch = round up to a multiple of the batch (case rule) · Minimum batch = never order less than the batch.</p>
+
+      <h3>Bill of materials &amp; scrap</h3>
+      <div class="grid2">
+        <div class="scroll"><table id="bomTable" class="assump"></table></div>
+        <pre class="tree" id="bomTree"></pre>
+      </div>
+
+      <h3>Scheduled receipts (open orders)</h3>
+      <div class="scroll"><table id="srTable" class="assump"></table></div>
+      <button id="btnAddSR" class="noprint" style="margin-top:8px">+ Add receipt</button>
+    </section>
+
+    <section id="mrp">
+      <h2><span class="n">3</span>MRP tables by item</h2>
+      <div id="mrpTables"></div>
+    </section>
+
+    <section id="method">
+      <details class="fx">
+        <summary><h2><span class="n">4</span>Logic &amp; formulas</h2><span class="meta">(click to show)</span></summary>
+        <div class="formula">
+          <p><b>Processing order:</b> items are planned level by level (low-level coding): N3000 → N3300, N3700, N3800 → N3330, N3340, N3350, N3730, N3740, N3750 → N3353, N3357. A component is planned only after all its parents.</p>
+          <p><b>Gross requirements (GR):</b> N3000 = customer demand. Component = Σ over parents of [parent planned order release in week t × quantity per × scrap factor], rounded up to the item's precision. Scrap factor = 1 + scrap% (or 1 ÷ (1 − scrap%) with the alternative rule).</p>
+          <p><b>Projected available (PA):</b> PA<sub>t</sub> = PA<sub>t−1</sub> + scheduled receipts<sub>t</sub> + planned order receipts<sub>t</sub> − GR<sub>t</sub>, starting from the initial inventory.</p>
+          <p><b>Net requirement (NR):</b> NR<sub>t</sub> = max(0, GR<sub>t</sub> + safety stock − PA<sub>t−1</sub> − scheduled receipts<sub>t</sub>).</p>
+          <p><b>Planned order receipt:</b> lot-sizing rule applied to NR<sub>t</sub> (lot-for-lot, multiple of batch, or minimum batch).</p>
+          <p><b>Planned order release:</b> the planned receipt offset by the lead time (released in week t − lead time). If that week is before week 1, the order is shown as <b>LATE</b> in the "Now" column: it must be released now and expedited.</p>
+          <p><b>Week 1 orders:</b> all planned order releases in week 1 plus any late releases, split into purchased items (external suppliers) and manufactured items (in-house).</p>
+          <p><b>Assumptions:</b> safety stock for finished goods is held by the distribution centers, so it is 0 by default; capacity is assumed sufficient; N3300 and N3700 lead time = 2 weeks (two 1-week operations in centers A and B); scheduled receipts entered for week 0 or earlier are treated as available now.</p>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <aside>
+    <div class="panel">
+      <h2>Orders to release · week 1</h2>
+      <div id="alerts" class="alerts"></div>
+      <div class="grp"><span>Purchase · external suppliers</span><span class="count" id="cntBuy"></span></div>
+      <div id="ordBuy"></div>
+      <div class="grp"><span>Production · in-house</span><span class="count" id="cntMake"></span></div>
+      <div id="ordMake"></div>
+      <p class="hint" id="lastEdit">Cells changed by your last edit are outlined in yellow.</p>
+    </div>
+  </aside>
+</div>
+<footer>Delphine Weiss &amp; Luíza Cavalcanti · Operations I · Homework 1</footer>
+
+<script>
+// MRP engine (pure function). Bucket 0 = "past due / now" (before week 1).
+function roundUp(x, dec) {
+  const f = Math.pow(10, dec || 0);
+  return Math.ceil(x * f - 1e-9) / f;
+}
+function lotSize(net, policy, lot, dec) {
+  if (net <= 1e-12) return 0;
+  lot = Number(lot) || 0;
+  let q;
+  if (policy === 'MULT' && lot > 0) q = Math.ceil(net / lot - 1e-9) * lot;
+  else if (policy === 'MIN' && lot > 0) q = Math.max(net, lot);
+  else q = net; // L4L (or invalid lot -> L4L)
+  return roundUp(q, dec);
+}
+function lowLevelOrder(items, bom) {
+  const level = {};
+  items.forEach(i => (level[i.code] = 0));
+  let changed = true, guard = 0;
+  while (changed && guard++ < 100) {
+    changed = false;
+    bom.forEach(l => {
+      if (level[l.parent] === undefined || level[l.child] === undefined) return;
+      if (level[l.child] < level[l.parent] + 1) { level[l.child] = level[l.parent] + 1; changed = true; }
+    });
+  }
+  return { level, order: items.map(i => i.code).sort((a, b) => level[a] - level[b] || items.findIndex(i => i.code === a) - items.findIndex(i => i.code === b)) };
+}
+function runMRP(cfg) {
+  const H = cfg.horizon;
+  const byCode = {}; cfg.items.forEach(i => (byCode[i.code] = i));
+  const { level, order } = lowLevelOrder(cfg.items, cfg.bom);
+  const factor = s => (cfg.scrapMethod === 'divide' ? 1 / (1 - Math.min(s, 99.999) / 100) : 1 + s / 100);
+  const res = {}; const alerts = [];
+  const rawGR = {}; cfg.items.forEach(i => (rawGR[i.code] = new Array(H + 1).fill(0)));
+  // independent demand
+  Object.keys(cfg.demand || {}).forEach(code => {
+    if (!rawGR[code]) return;
+    for (let w = 1; w <= H; w++) rawGR[code][w] += Number(cfg.demand[code][w - 1]) || 0;
+  });
+  order.forEach(code => {
+    const it = byCode[code];
+    const dec = Number(it.dec) || 0;
+    const lt = Math.max(0, Math.round(Number(it.lt) || 0));
+    const ss = Math.max(0, Number(it.ss) || 0);
+    const GR = rawGR[code].map(x => roundUp(x, dec));
+    const SR = new Array(H + 1).fill(0);
+    (cfg.sched || []).forEach(s => {
+      if (s.item !== code) return;
+      const w = Math.round(Number(s.week));
+      const q = Number(s.qty) || 0;
+      if (!(q > 0)) return;
+      if (w > H) { alerts.push({ type: 'info', msg: `Scheduled receipt of ${q} ${code} in week ${w} is beyond the horizon and is ignored.` }); return; }
+      SR[Math.max(0, w)] += q;
+    });
+    const PA = new Array(H + 1).fill(0), NET = new Array(H + 1).fill(0), PRCV = new Array(H + 1).fill(0), POR = new Array(H + 1).fill(0);
+    let prev = Number(it.onHand) || 0;
+    const late = [];
+    for (let t = 0; t <= H; t++) {
+      let avail = prev + SR[t] - GR[t];
+      const target = t === 0 ? 0 : ss;
+      if (avail < target - 1e-9) {
+        const net = roundUp(target - avail, dec);
+        NET[t] = net;
+        const q = lotSize(net, it.policy, it.lot, dec);
+        PRCV[t] = q; avail += q;
+        const r = t - lt;
+        POR[Math.max(0, r)] += q;
+        if (r < 1) late.push({ week: t, qty: q, release: r });
+      }
+      PA[t] = Math.round(avail * 1e6) / 1e6;
+      prev = avail;
+    }
+    late.forEach(l => alerts.push({ type: 'late', item: code, msg: `<b>${code}</b>: ${fmt(l.qty)} needed ${l.week === 0 ? 'now' : 'in wk ' + l.week}, should have been released in wk ${l.release} (LT ${lt})` }));
+    res[code] = { GR, SR, PA, NET, PRCV, POR, late, level: level[code], onHand: Number(it.onHand) || 0 };
+    // explode to children
+    cfg.bom.filter(l => l.parent === code).forEach(l => {
+      if (!rawGR[l.child]) return;
+      const f = (Number(l.qty) || 0) * factor(Number(l.scrap) || 0);
+      for (let t = 0; t <= H; t++) rawGR[l.child][t] += POR[t] * f;
+    });
+  });
+  return { res, alerts, order, level };
+}
+function fmt(x) {
+  if (x === 0) return '0';
+  return Number.isInteger(x) ? x.toLocaleString('en-US') : x.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+if (typeof module !== 'undefined') module.exports = { runMRP, roundUp, lotSize };
+
+const DEFAULTS = {
+  horizon: 15,
+  scrapMethod: 'multiply',
+  items: [
+    { code: 'N3000', name: 'Box of 10 kits', type: 'make', onHand: 50, policy: 'MULT', lot: 60, lt: 1, ss: 0, dec: 0 },
+    { code: 'N3300', name: 'Nail varnish', type: 'make', onHand: 70, policy: 'L4L', lot: 0, lt: 2, ss: 0, dec: 0 },
+    { code: 'N3700', name: 'Lipstick', type: 'make', onHand: 40, policy: 'L4L', lot: 0, lt: 2, ss: 0, dec: 0 },
+    { code: 'N3800', name: 'Box', type: 'buy', onHand: 50, policy: 'MULT', lot: 100, lt: 0, ss: 0, dec: 0 },
+    { code: 'N3330', name: 'Plastic sheet (varnish)', type: 'buy', onHand: 820, policy: 'MULT', lot: 1000, lt: 4, ss: 0, dec: 0 },
+    { code: 'N3340', name: 'Cardboard (varnish)', type: 'buy', onHand: 800, policy: 'MULT', lot: 1000, lt: 3, ss: 0, dec: 0 },
+    { code: 'N3350', name: 'Filled bottle', type: 'make', onHand: 290, policy: 'L4L', lot: 0, lt: 1, ss: 0, dec: 0 },
+    { code: 'N3730', name: 'Lipstick bar', type: 'buy', onHand: 25, policy: 'MULT', lot: 200, lt: 2, ss: 0, dec: 0 },
+    { code: 'N3740', name: 'Cardboard (lipstick)', type: 'buy', onHand: 400, policy: 'MULT', lot: 1000, lt: 3, ss: 0, dec: 0 },
+    { code: 'N3750', name: 'Plastic sheet (lipstick)', type: 'buy', onHand: 750, policy: 'MULT', lot: 1000, lt: 4, ss: 0, dec: 0 },
+    { code: 'N3353', name: 'Empty bottle', type: 'buy', onHand: 140, policy: 'MULT', lot: 200, lt: 2, ss: 0, dec: 0 },
+    { code: 'N3357', name: 'Varnish', type: 'buy', onHand: 50, policy: 'L4L', lot: 0, lt: 0, ss: 0, dec: 2 }
+  ],
+  bom: [
+    { parent: 'N3000', child: 'N3300', qty: 10, scrap: 0 },
+    { parent: 'N3000', child: 'N3700', qty: 10, scrap: 0 },
+    { parent: 'N3000', child: 'N3800', qty: 1, scrap: 0 },
+    { parent: 'N3300', child: 'N3330', qty: 1, scrap: 5 },
+    { parent: 'N3300', child: 'N3340', qty: 1, scrap: 5 },
+    { parent: 'N3300', child: 'N3350', qty: 1, scrap: 0 },
+    { parent: 'N3350', child: 'N3353', qty: 1, scrap: 1 },
+    { parent: 'N3350', child: 'N3357', qty: 0.01, scrap: 2 },
+    { parent: 'N3700', child: 'N3730', qty: 1, scrap: 0 },
+    { parent: 'N3700', child: 'N3740', qty: 1, scrap: 5 },
+    { parent: 'N3700', child: 'N3750', qty: 1, scrap: 5 }
+  ],
+  demand: { N3000: [0, 0, 25, 0, 40, 0, 0, 75, 0, 0, 100, 0, 75, 0, 80] },
+  sched: [
+    { ref: 'PO 811', item: 'N3350', qty: 400, week: 1 },
+    { ref: 'PO 813', item: 'N3740', qty: 1000, week: 2 },
+    { ref: 'PO 756', item: 'N3730', qty: 800, week: 2 },
+    { ref: 'PO 947', item: 'N3750', qty: 1000, week: 3 }
+  ]
+};
+if (typeof module !== 'undefined') module.exports = DEFAULTS;
+
+
+let S = JSON.parse(JSON.stringify(DEFAULTS));
+let lastResult = null, prevSnap = null;
+const openState = {};
+
+const $ = id => document.getElementById(id);
+const num = (v, d = 0) => { const x = parseFloat(v); return isFinite(x) ? x : d; };
+function itemByCode(c) { return S.items.find(i => i.code === c); }
+function f(x) { if (Math.abs(x) < 1e-9) return '0'; return fmt(Math.round(x * 100) / 100); }
+
+function sanitize() {
+  S.horizon = Math.min(52, Math.max(1, Math.round(num(S.horizon, 15))));
+  const d = S.demand.N3000; while (d.length < S.horizon) d.push(0);
+}
+
+/* ---------- Input tables ---------- */
+function buildDemand() {
+  const H = S.horizon, d = S.demand.N3000;
+  let h = '<tr><th class="l">Week</th>'; for (let w = 1; w <= H; w++) h += `<th class="${w === 1 ? 'w1' : ''}">${w}</th>`; h += '<th class="noprint addwk" rowspan="2"><button class="x" data-hz="1" title="Add a week">+ week</button><button class="x" data-hz="-1" title="Remove the last week">− week</button></th><th>Total</th></tr><tr><td class="l"><b>N3000</b></td>';
+  for (let w = 1; w <= H; w++) h += `<td class="${w === 1 ? 'w1' : ''}"><input type="number" min="0" step="1" data-k="dem" data-w="${w}" value="${d[w - 1] ?? 0}" style="width:56px"></td>`;
+  h += `<td id="demTot"></td></tr>`;
+  $('demandTable').innerHTML = h;
+}
+function buildItems() {
+  let h = '<tr><th class="l">Item</th><th>Type</th><th>Initial inventory</th><th>Lot sizing</th><th>Batch</th><th>Lead time (wks)</th><th>Safety stock</th><th>Decimals</th></tr>';
+  S.items.forEach((it, i) => {
+    h += `<tr><td class="l"><b>${it.code}</b> ${it.name}</td>
+      <td><select data-k="type" data-i="${i}"><option value="buy" ${it.type === 'buy' ? 'selected' : ''}>Purchased</option><option value="make" ${it.type === 'make' ? 'selected' : ''}>Manufactured</option></select></td>
+      <td><input type="number" min="0" data-k="onHand" data-i="${i}" value="${it.onHand}"></td>
+      <td><select data-k="policy" data-i="${i}"><option value="L4L" ${it.policy === 'L4L' ? 'selected' : ''}>Lot-for-lot</option><option value="MULT" ${it.policy === 'MULT' ? 'selected' : ''}>Multiple of batch</option><option value="MIN" ${it.policy === 'MIN' ? 'selected' : ''}>Minimum batch</option></select></td>
+      <td><input type="number" min="0" data-k="lot" data-i="${i}" value="${it.lot}" ${it.policy === 'L4L' ? 'disabled' : ''}></td>
+      <td><input type="number" min="0" step="1" data-k="lt" data-i="${i}" value="${it.lt}" style="width:56px"></td>
+      <td><input type="number" min="0" data-k="ss" data-i="${i}" value="${it.ss}" style="width:64px"></td>
+      <td><input type="number" min="0" max="4" step="1" data-k="dec" data-i="${i}" value="${it.dec}" style="width:48px"></td></tr>`;
+  });
+  $('itemTable').innerHTML = h;
+}
+function buildBom() {
+  let h = '<tr><th class="l">Parent</th><th class="l">Component</th><th>Qty</th><th>Scrap %</th></tr>';
+  S.bom.forEach((l, i) => {
+    h += `<tr><td class="l">${l.parent}</td><td class="l">${l.child} ${itemByCode(l.child).name}</td><td>${l.qty}</td>
+      <td><input type="number" min="0" max="99" step="0.5" data-k="scrap" data-i="${i}" value="${l.scrap}" style="width:60px"></td></tr>`;
+  });
+  $('bomTable').innerHTML = h;
+  const lines = [];
+  const walk = (code, prefix, last, qty, depth) => {
+    const it = itemByCode(code);
+    const branch = depth === 0 ? '' : (last ? '└─ ' : '├─ ');
+    lines.push(`${prefix}${branch}${code} ${it.name}${depth ? '  ×' + qty : ''}`);
+    const kids = S.bom.filter(l => l.parent === code);
+    kids.forEach((k, j) => walk(k.child, depth === 0 ? '' : prefix + (last ? '   ' : '│  '), j === kids.length - 1, k.qty, depth + 1));
+  };
+  walk('N3000', '', true, 1, 0);
+  $('bomTree').textContent = lines.join('\n');
+}
+function buildSR() {
+  let h = '<tr><th class="l">Order</th><th>Item</th><th>Qty</th><th>Due week</th><th class="noprint"></th></tr>';
+  S.sched.forEach((s, i) => {
+    h += `<tr><td class="l"><input type="text" data-k="srref" data-i="${i}" value="${s.ref || ''}" style="width:86px"></td>
+      <td><select data-k="sritem" data-i="${i}">${S.items.map(it => `<option value="${it.code}" ${it.code === s.item ? 'selected' : ''}>${it.code} ${it.name}</option>`).join('')}</select></td>
+      <td><input type="number" min="0" data-k="srqty" data-i="${i}" value="${s.qty}"></td>
+      <td><input type="number" min="0" step="1" data-k="srweek" data-i="${i}" value="${s.week}" style="width:56px"></td>
+      <td class="noprint"><button class="x" data-del="${i}" title="Remove">✕</button></td></tr>`;
+  });
+  if (!S.sched.length) h += '<tr><td colspan="5" class="empty">No scheduled receipts.</td></tr>';
+  $('srTable').innerHTML = h;
+}
+function buildAll() { buildDemand(); buildItems(); buildBom(); buildSR(); $('horizon').value = S.horizon; $('scrapMethod').value = S.scrapMethod; }
+
+/* ---------- Input handling ---------- */
+function markBad(el, bad) { el.classList.toggle('bad', !!bad); }
+document.addEventListener('input', onEdit);
+document.addEventListener('change', onEdit);
+function onEdit(e) {
+  const el = e.target, k = el.dataset && el.dataset.k;
+  if (el.id === 'horizon') { const v = num(el.value, NaN); markBad(el, !(v >= 1 && v <= 52)); if (v >= 1) { S.horizon = Math.min(52, Math.round(v)); sanitize(); buildDemand(); } recalc(); return; }
+  if (el.id === 'scrapMethod') { S.scrapMethod = el.value; recalc(); return; }
+  if (!k) return;
+  const i = +el.dataset.i, raw = el.value, v = num(raw, NaN);
+  const nonneg = x => isFinite(x) && x >= 0;
+  switch (k) {
+    case 'dem': { const w = +el.dataset.w; markBad(el, raw !== '' && !nonneg(v)); S.demand.N3000[w - 1] = nonneg(v) ? v : 0; break; }
+    case 'type': S.items[i].type = raw; break;
+    case 'policy': S.items[i].policy = raw; if (e.type === 'change') buildItems(); break;
+    case 'onHand': case 'ss': markBad(el, raw !== '' && !nonneg(v)); S.items[i][k] = nonneg(v) ? v : 0; break;
+    case 'lot': markBad(el, (raw !== '' && !nonneg(v)) || (v === 0 && S.items[i].policy !== 'L4L')); S.items[i].lot = nonneg(v) ? v : 0; break;
+    case 'lt': markBad(el, raw !== '' && !(nonneg(v) && Number.isInteger(v))); S.items[i].lt = nonneg(v) ? Math.round(v) : 0; break;
+    case 'dec': markBad(el, raw !== '' && !(nonneg(v) && v <= 4 && Number.isInteger(v))); S.items[i].dec = nonneg(v) ? Math.min(4, Math.round(v)) : 0; break;
+    case 'scrap': markBad(el, raw !== '' && !(nonneg(v) && v < 100)); S.bom[i].scrap = nonneg(v) && v < 100 ? v : 0; break;
+    case 'srref': S.sched[i].ref = raw; return;
+    case 'sritem': S.sched[i].item = raw; break;
+    case 'srqty': markBad(el, raw !== '' && !nonneg(v)); S.sched[i].qty = nonneg(v) ? v : 0; break;
+    case 'srweek': markBad(el, raw !== '' && !(isFinite(v) && Number.isInteger(v))); S.sched[i].week = isFinite(v) ? Math.round(v) : 1; break;
+  }
+  recalc();
+}
+function setHorizon(h) {
+  const grew = h > S.horizon;
+  S.horizon = Math.min(52, Math.max(1, h)); sanitize(); buildDemand(); $('horizon').value = S.horizon; $('horizon').classList.remove('bad'); recalc();
+  const wrap = $('demandTable').parentElement; wrap.scrollLeft = wrap.scrollWidth;
+  if (grew) { const last = document.querySelector(`input[data-k=dem][data-w="${S.horizon}"]`); if (last) { last.focus({ preventScroll: true }); last.select(); } }
+}
+document.addEventListener('click', e => {
+  const hz = e.target.dataset && e.target.dataset.hz;
+  if (hz !== undefined) { setHorizon(hz === 'reset' ? 15 : S.horizon + (+hz)); return; }
+  const del = e.target.dataset && e.target.dataset.del;
+  if (del !== undefined) { S.sched.splice(+del, 1); buildSR(); recalc(); }
+});
+$('btnAddSR').onclick = () => { S.sched.push({ ref: 'New PO', item: 'N3000', qty: 0, week: 1 }); buildSR(); recalc(); };
+$('btnReset').onclick = () => { S = JSON.parse(JSON.stringify(DEFAULTS)); buildAll(); recalc(); };
+$('btnExpand').onclick = () => {
+  const all = document.querySelectorAll('details.item'); const anyClosed = [...all].some(d => !d.open);
+  all.forEach(d => { d.open = anyClosed; openState[d.dataset.code] = anyClosed; });
+  $('btnExpand').textContent = anyClosed ? 'Collapse tables' : 'Expand tables';
+};
+
+/* ---------- Output ---------- */
+function snapshot(R) {
+  const s = {}; R.order.forEach(c => { const x = R.res[c]; ['GR', 'SR', 'PA', 'NET', 'PRCV', 'POR'].forEach(k => (s[c + k] = x[k].slice())); });
+  return s;
+}
+function changed(key, t, v) { return prevSnap && prevSnap[key] && Math.abs((prevSnap[key][t] ?? 0) - v) > 1e-9; }
+
+function recalc() {
+  sanitize();
+  const cfg = { horizon: S.horizon, scrapMethod: S.scrapMethod, items: S.items, bom: S.bom, sched: S.sched, demand: { N3000: S.demand.N3000.slice(0, S.horizon) } };
+  const R = runMRP(cfg); lastResult = R;
+  const H = S.horizon;
+  if ($('hzLabel')) $('hzLabel').textContent = `Horizon: ${H} weeks (max 52)`;
+  if ($('demTot')) $('demTot').textContent = f(cfg.demand.N3000.reduce((a, b) => a + (+b || 0), 0));
+
+  // alerts
+  let a = '';
+  const late = R.alerts.filter(x => x.type === 'late'), info = R.alerts.filter(x => x.type !== 'late');
+  if (late.length) a += `<div class="late"><b>⚠ ${late.length} late order${late.length > 1 ? 's' : ''}</b> · release now and expedite:<br>${late.map(x => '• ' + x.msg).join('<br>')}</div>`;
+  info.forEach(x => (a += `<div class="info">${x.msg}</div>`));
+  const invalid = document.querySelectorAll('input.bad').length;
+  if (invalid) a += `<div class="info">${invalid} invalid input(s) in red, treated as 0 or rounded.</div>`;
+  if (!late.length) a += `<div class="ok">✔ Feasible plan: no late orders in the ${H}-week horizon.</div>`;
+  $('alerts').innerHTML = a;
+
+  // week-1 orders (sidebar)
+  const rows = { buy: [], make: [] };
+  R.order.forEach(code => {
+    const it = itemByCode(code), x = R.res[code];
+    const lt = Math.max(0, Math.round(+it.lt || 0));
+    if (x.POR[0] > 1e-9) rows[it.type].push({ code, it, qty: x.POR[0], t: 0, late: true, due: x.late.map(l => (l.week === 0 ? 'now' : 'wk ' + l.week)).join(', ') });
+    if (H >= 1 && x.POR[1] > 1e-9) rows[it.type].push({ code, it, qty: x.POR[1], t: 1, late: false, due: 'wk ' + (1 + lt) });
+  });
+  ['buy', 'make'].forEach(t => {
+    const r = rows[t];
+    $(t === 'buy' ? 'cntBuy' : 'cntMake').textContent = r.length + (r.length === 1 ? ' order' : ' orders');
+    $(t === 'buy' ? 'ordBuy' : 'ordMake').innerHTML = r.length ?
+      `<table class="side"><tr><th class="l">Item</th><th>Qty</th><th>Due</th><th>LT</th></tr>${r.map(o => `<tr><td class="l"><b>${o.code}</b> ${o.late ? '<span class="tag late">LATE</span>' : ''}<span class="d">${o.it.name}</span></td><td class="${changed(o.code + 'POR', o.t, o.qty) ? 'chg' : ''}"><b>${f(o.qty)}</b></td><td>${o.due}</td><td>${o.it.lt}</td></tr>`).join('')}</table>`
+      : `<div class="empty">None this week.</div>`;
+  });
+
+  // release schedule
+  const anyLate = R.order.some(c => R.res[c].POR[0] > 1e-9);
+  let s = `<tr><th class="l">Item</th><th>Type</th>${anyLate ? '<th>Late</th>' : ''}`;
+  for (let w = 1; w <= H; w++) s += `<th class="${w === 1 ? 'w1' : ''}">W${w}</th>`; s += '<th>Total</th></tr>';
+  ['buy', 'make'].forEach(t => {
+    s += `<tr class="band"><td class="l" colspan="${H + 3 + (anyLate ? 1 : 0)}">${t === 'buy' ? 'Purchase orders' : 'Production orders'}</td></tr>`;
+    R.order.filter(c => itemByCode(c).type === t).forEach(c => {
+      const x = R.res[c]; let tot = 0;
+      s += `<tr><td class="l"><b>${c}</b> ${itemByCode(c).name}</td><td><span class="tag ${t}">${t === 'buy' ? 'BUY' : 'MAKE'}</span></td>`;
+      if (anyLate) s += `<td class="por past ${x.POR[0] > 1e-9 ? 'has' : 'zero'} ${changed(c + 'POR', 0, x.POR[0]) ? 'chg' : ''}">${x.POR[0] > 1e-9 ? f(x.POR[0]) : '·'}</td>`;
+      tot += x.POR[0];
+      for (let w = 1; w <= H; w++) { const v = x.POR[w]; tot += v; s += `<td class="${w === 1 ? 'w1 ' : ''}${v > 1e-9 ? 'por has' : 'zero'} ${changed(c + 'POR', w, v) ? 'chg' : ''}">${v > 1e-9 ? f(v) : '·'}</td>`; }
+      s += `<td><b>${f(tot)}</b></td></tr>`;
+    });
+  });
+  $('schedTable').innerHTML = s;
+
+  // detailed MRP tables
+  const policyTxt = it => it.policy === 'L4L' ? 'lot-for-lot' : it.policy === 'MULT' ? `multiple of ${f(+it.lot)}` : `min. ${f(+it.lot)}`;
+  let m = '';
+  R.order.forEach(code => {
+    const it = itemByCode(code), x = R.res[code];
+    const parents = S.bom.filter(l => l.child === code).map(l => `${l.parent} ×${l.qty}${+l.scrap ? ', scrap ' + l.scrap + '%' : ''}`);
+    const isOpen = openState[code] !== undefined ? openState[code] : true;
+    m += `<details class="item" data-code="${code}" ${isOpen ? 'open' : ''}><summary><span class="lvl">L${x.level}</span><b>${code}</b> ${it.name} <span class="tag ${it.type}">${it.type === 'buy' ? 'BUY' : 'MAKE'}</span>
+      <span class="meta">Stock ${f(x.onHand)} · ${policyTxt(it)} · LT ${it.lt} · SS ${f(+it.ss || 0)} · ${parents.length ? 'in ' + parents.join('; ') : 'customer demand'}</span>${x.POR[0] > 1e-9 ? ' <span class="tag late">LATE</span>' : ''}</summary><div class="body scroll"><table class="mrpt">`;
+    m += `<tr><th class="l">Week</th><th title="Start of week 1 (initial stock) and late orders">Now</th>`; for (let w = 1; w <= H; w++) m += `<th class="${w === 1 ? 'w1' : ''}">${w}</th>`; m += '</tr>';
+    const row = (label, key, isPA, isPOR) => {
+      const arr = x[key];
+      let r = `<tr><td class="l">${label}</td>`;
+      for (let t = 0; t <= H; t++) {
+        const v = arr[t]; const c = [];
+        if (t === 1) c.push('w1');
+        if (isPOR) { c.push('por'); if (v > 1e-9) c.push('has'); if (t === 0) c.push('past'); }
+        const isZero = Math.abs(v) < 1e-9;
+        if (isZero && !isPA) c.push('zero');
+        if (changed(code + key, t, v)) c.push('chg');
+        r += `<td class="${c.join(' ')}">${isZero && !isPA ? '·' : f(v)}</td>`;
+      }
+      return r + '</tr>';
+    };
+    m += row('Gross requirements', 'GR');
+    m += row('Scheduled receipts', 'SR');
+    m += row('Projected available', 'PA', true);
+    m += row('Net requirements', 'NET');
+    m += row('Planned order receipts', 'PRCV');
+    m += row('<b>Planned order releases</b>', 'POR', false, true);
+    m += '</table></div></details>';
+  });
+  $('mrpTables').innerHTML = m;
+  document.querySelectorAll('details.item').forEach(d => d.addEventListener('toggle', () => (openState[d.dataset.code] = d.open)));
+  if (prevSnap) {
+    const items = new Set(); let porChg = 0;
+    R.order.forEach(c => ['GR', 'NET', 'PRCV', 'POR'].forEach(k => R.res[c][k].forEach((v, t) => { if (changed(c + k, t, v)) { items.add(c); if (k === 'POR') porChg++; } })));
+    $('lastEdit').innerHTML = !items.size ? 'Last edit: <b>no requirement changed</b>.'
+      : !porChg ? `Last edit changed the requirements of ${[...items].join(', ')} but <b>no planned order</b>: the extra quantity is covered by stock on hand or by the batch already planned.`
+      : `Last edit changed requirements of <b>${items.size} item${items.size > 1 ? 's' : ''}</b> (${[...items].join(', ')}) and <b>${porChg}</b> planned release cell${porChg === 1 ? '' : 's'}, outlined in yellow.`;
+  }
+  prevSnap = snapshot(R);
+}
+
+$('btnCsv').onclick = () => {
+  if (!lastResult) return;
+  const H = S.horizon; const lines = [];
+  lines.push(['Item', 'Row', 'Now', ...Array.from({ length: H }, (_, i) => 'W' + (i + 1))].join(','));
+  lastResult.order.forEach(c => {
+    const x = lastResult.res[c];
+    [['Gross requirements', x.GR], ['Scheduled receipts', x.SR], ['Projected available', x.PA], ['Net requirements', x.NET], ['Planned order receipts', x.PRCV], ['Planned order releases', x.POR]]
+      .forEach(([n, a]) => lines.push([c, n, ...a.map(v => Math.round(v * 100) / 100)].join(',')));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'BeautyPlus_MRP.csv'; link.click();
+};
+
+buildAll();
+recalc();
+</script>
+</body>
+</html>
